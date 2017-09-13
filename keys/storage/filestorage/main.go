@@ -6,6 +6,7 @@ like standard ssh key storage.
 package filestorage
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -49,7 +50,7 @@ func (s FileStore) assertStorage() keys.Storage {
 
 // Put creates two files, one with the public info as json, the other
 // with the (encoded) private key as gpg ascii-armor style
-func (s FileStore) Put(name string, key []byte, info keys.Info) error {
+func (s FileStore) Put(name string, salt, key []byte, info keys.Info) error {
 	pub, priv := s.nameToPaths(name)
 
 	// write public info
@@ -59,22 +60,22 @@ func (s FileStore) Put(name string, key []byte, info keys.Info) error {
 	}
 
 	// write private info
-	return write(priv, name, key)
+	return write(priv, name, salt, key)
 }
 
 // Get loads the info and (encoded) private key from the directory
 // It uses `name` to generate the filename, and returns an error if the
 // files don't exist or are in the incorrect format
-func (s FileStore) Get(name string) ([]byte, keys.Info, error) {
+func (s FileStore) Get(name string) ([]byte, []byte, keys.Info, error) {
 	pub, priv := s.nameToPaths(name)
 
 	info, err := readInfo(pub)
 	if err != nil {
-		return nil, info, err
+		return nil, nil, info, err
 	}
 
-	key, _, err := read(priv)
-	return key, info.Format(), err
+	key, salt, _, err := read(priv)
+	return key, salt, info.Format(), err
 }
 
 // List parses the key directory for public info and returns a list of
@@ -130,7 +131,7 @@ func writeInfo(path string, info keys.Info) error {
 
 func readInfo(path string) (info keys.Info, err error) {
 	var data []byte
-	data, info.Name, err = read(path)
+	data, _, info.Name, err = read(path)
 	if err != nil {
 		return
 	}
@@ -139,32 +140,46 @@ func readInfo(path string) (info keys.Info, err error) {
 	return
 }
 
-func read(path string) ([]byte, string, error) {
+func read(path string) ([]byte, []byte, string, error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "Reading data")
+		return nil, nil, "", errors.Wrap(err, "Reading data")
 	}
 	d, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "Reading data")
+		return nil, nil, "", errors.Wrap(err, "Reading data")
 	}
 	block, headers, key, err := crypto.DecodeArmor(string(d))
 	if err != nil {
-		return nil, "", errors.Wrap(err, "Invalid Armor")
+		return nil, nil, "", errors.Wrap(err, "Invalid Armor")
 	}
 	if block != BlockType {
-		return nil, "", errors.Errorf("Unknown key type: %s", block)
+		return nil, nil, "", errors.Errorf("Unknown key type: %s", block)
 	}
-	return key, headers["name"], nil
+	if header["kdf"] != "bcrypt" {
+		return nil, nil, "", errors.Errorf("Unrecognized KDF type: %v", header["KDF"])
+	}
+	if header["salt"] == "" {
+		return nil, nil, "", errors.Errorf("Missing salt bytes")
+	}
+	saltBytes, err := hex.DecodeString(header["salt"])
+	if err != nil {
+		return nil, nil, "", errors.Errorf("Error decoding salt: %v", err.Error())
+	}
+	return key, saltBytes, headers["name"], nil
 }
 
-func write(path, name string, key []byte) error {
+func write(path, name string, salt []byte, key []byte) error {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, keyPerm)
 	if err != nil {
 		return errors.Wrap(err, "Writing data")
 	}
 	defer f.Close()
-	headers := map[string]string{"name": name}
+	headers := map[string]string{
+		"name": name,
+		"kdf":  "bycrypt",
+		"salt": fmt.Sprintf("%X", saltBytes),
+	}
 	text := crypto.EncodeArmor(BlockType, headers, key)
 	_, err = f.WriteString(text)
 	return errors.Wrap(err, "Writing data")

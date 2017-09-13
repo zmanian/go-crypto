@@ -15,22 +15,22 @@ func TestNoopEncoder(t *testing.T) {
 	key := cryptostore.GenEd25519.Generate()
 	key2 := cryptostore.GenSecp256k1.Generate()
 
-	b, err := noop.Encrypt(key, "encode")
+	_, b, err := noop.Encrypt(key, "encode")
 	require.Nil(err)
 	assert.NotEmpty(b)
 
-	b2, err := noop.Encrypt(key2, "encode")
+	_, b2, err := noop.Encrypt(key2, "encode")
 	require.Nil(err)
 	assert.NotEmpty(b2)
 	assert.NotEqual(b, b2)
 
 	// note the decode with a different password works - not secure!
-	pk, err := noop.Decrypt(b, "decode")
+	pk, err := noop.Decrypt([]byte{}, b, "decode")
 	require.Nil(err)
 	require.NotNil(pk)
 	assert.Equal(key, pk)
 
-	pk2, err := noop.Decrypt(b2, "kggugougp")
+	pk2, err := noop.Decrypt([]byte{}, b2, "kggugougp")
 	require.Nil(err)
 	require.NotNil(pk2)
 	assert.Equal(key2, pk2)
@@ -43,17 +43,17 @@ func TestSecretBox(t *testing.T) {
 	key := cryptostore.GenEd25519.Generate()
 	pass := "some-special-secret"
 
-	b, err := enc.Encrypt(key, pass)
+	s, b, err := enc.Encrypt(key, pass)
 	require.Nil(err)
 	assert.NotEmpty(b)
 
 	// decoding with a different pass is an error
-	pk, err := enc.Decrypt(b, "decode")
+	pk, err := enc.Decrypt(s, b, "decode")
 	require.NotNil(err)
 	require.True(pk.Empty())
 
 	// but decoding with the same passphrase gets us our key
-	pk, err = enc.Decrypt(b, pass)
+	pk, err = enc.Decrypt(s, b, pass)
 	require.Nil(err)
 	assert.Equal(key, pk)
 }
