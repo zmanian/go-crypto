@@ -27,15 +27,21 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	if strings.ToUpper(readable) != "COSADDR" {
-		return fmt.Errorf("%s is not COSADDR the Cosmos Address identifier", readable)
+	if strings.ToUpper(readable) != "CSMSADDR" {
+		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
 	}
-	*a = Address{deserialized}
+
+	cdc.UnmarshalBinary(deserialized, a)
 	return nil
 }
 
 func (a *Address) MarshalJSON() ([]byte, error) {
-	bech, err := bech32cosmos.Encode("COSADDR", a.Bytes())
+
+	marshaled, err := cdc.MarshalBinary(a)
+	if err != nil {
+		return nil, err
+	}
+	bech, err := bech32cosmos.Encode("CSMSADDR", marshaled)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +49,11 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 }
 
 func (a *Address) String() string {
-	bech, err := bech32cosmos.Encode("COSADDR", a.Bytes())
+	marshaled, err := cdc.MarshalBinary(a)
+	if err != nil {
+		return err.Error()
+	}
+	bech, err := bech32cosmos.Encode("CSMSADDR", marshaled)
 	if err != nil {
 		return err.Error()
 	}
@@ -109,7 +119,11 @@ func (pubKey PubKeyEd25519) ToCurve25519() *[32]byte {
 }
 
 func (pubKey PubKeyEd25519) String() string {
-	bech, err := bech32cosmos.Encode("COSPUBKEY", pubKey[:])
+	marshaled, err := cdc.MarshalBinary(pubKey)
+	if err != nil {
+		return err.Error()
+	}
+	bech, err := bech32cosmos.Encode("CSMSPUB", marshaled)
 	if err != nil {
 		return err.Error()
 	}
@@ -171,7 +185,15 @@ func (pubKey PubKeySecp256k1) VerifyBytes(msg []byte, sig_ Signature) bool {
 }
 
 func (pubKey PubKeySecp256k1) String() string {
-	return fmt.Sprintf("PubKeySecp256k1{%X}", pubKey[:])
+	marshaled, err := cdc.MarshalBinary(pubKey)
+	if err != nil {
+		return err.Error()
+	}
+	bech, err := bech32cosmos.Encode("CSMSPUB", marshaled)
+	if err != nil {
+		return err.Error()
+	}
+	return bech
 }
 
 func (pubKey PubKeySecp256k1) Equals(other PubKey) bool {
