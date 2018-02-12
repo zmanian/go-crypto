@@ -14,6 +14,7 @@ type keyData struct {
 	pub        string
 	addr       string
 	bech32addr string
+	bech32pub  string
 }
 
 var secpDataTable = []keyData{
@@ -22,6 +23,7 @@ var secpDataTable = []keyData{
 		pub:        "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
 		addr:       "1CKZ9Nx4zgds8tU7nJHotKSDr4a9bYJCa3",
 		bech32addr: "csmsaddr:cklnrf3g0s4mg25tu6termrk8egltfyme4q7sg3h9myxnv",
+		bech32pub:  "csmspub:ucfk4sszj58peh7tzv7kqfqsnl2gnae5a669qfqcu5uv9pyp7g4uufm0yjxqpj95k8",
 	},
 }
 
@@ -40,8 +42,17 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		copy(priv[:], privB)
 
 		pubT := priv.PubKey().(PubKeySecp256k1)
+		pubDeserialized := priv.PubKey().(PubKeySecp256k1)
+		err = pubDeserialized.FromString(d.bech32pub)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		pub := pubT[:]
+
 		addr := priv.PubKey().Address()
+		assert.Equal(t, pubT.String(), d.bech32pub)
+		assert.Equal(t, pubT, pubDeserialized)
 		assert.Equal(t, addr.String(), d.bech32addr)
 		assert.Equal(t, addr, addrDecoded)
 		assert.Equal(t, pub, pubB, "Expected pub keys to match")

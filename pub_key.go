@@ -76,7 +76,7 @@ func (a *Address) FromString(str string) error {
 		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
 	}
 
-	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, true)
+	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, false)
 
 	err = cdc.UnmarshalBinary(deserialized, a)
 
@@ -162,6 +162,29 @@ func (pubKey PubKeyEd25519) String() string {
 	return bech
 }
 
+func (pubKey *PubKeyEd25519) FromString(str string) error {
+	readable, deserialized, err := bech32cosmos.Decode(str)
+	if err != nil {
+		return err
+	}
+	if strings.ToLower(readable) != "csmspub" {
+		return fmt.Errorf("%s is not csmspub the Cosmos Public Key identifier", readable)
+	}
+
+	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, false)
+
+	err = cdc.UnmarshalBinary(deserialized, pubKey)
+
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (pubKey PubKeyEd25519) Equals(other PubKey) bool {
 	if otherEd, ok := other.(PubKeyEd25519); ok {
 		return bytes.Equal(pubKey[:], otherEd[:])
@@ -230,6 +253,28 @@ func (pubKey PubKeySecp256k1) String() string {
 	return bech
 }
 
+func (pubKey *PubKeySecp256k1) FromString(str string) error {
+	readable, deserialized, err := bech32cosmos.Decode(str)
+	if err != nil {
+		return err
+	}
+	if strings.ToLower(readable) != "csmspub" {
+		return fmt.Errorf("%s is not csmspub the Cosmos Public Key identifier", readable)
+	}
+
+	converted, err := bech32cosmos.ConvertBits(deserialized, 5, 8, false)
+
+	err = cdc.UnmarshalBinary(converted, pubKey)
+
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (pubKey PubKeySecp256k1) Equals(other PubKey) bool {
 	if otherSecp, ok := other.(PubKeySecp256k1); ok {
 		return bytes.Equal(pubKey[:], otherSecp[:])
