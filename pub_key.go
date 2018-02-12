@@ -31,7 +31,10 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
 	}
 
-	cdc.UnmarshalBinary(deserialized, a)
+	err = cdc.UnmarshalBinary(deserialized, a)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -41,7 +44,9 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	bech, err := bech32cosmos.Encode("CSMSADDR", marshaled)
+	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
+
+	bech, err := bech32cosmos.Encode("CSMSADDR", conv)
 	if err != nil {
 		return nil, err
 	}
@@ -51,13 +56,38 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 func (a *Address) String() string {
 	marshaled, err := cdc.MarshalBinary(a)
 	if err != nil {
-		return err.Error()
+		return "go-wire err:" + err.Error()
 	}
-	bech, err := bech32cosmos.Encode("CSMSADDR", marshaled)
+	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
+
+	bech, err := bech32cosmos.Encode("CSMSADDR", conv)
 	if err != nil {
-		return err.Error()
+		return "bech32cosmos err:" + err.Error()
 	}
 	return bech
+}
+
+func (a *Address) FromString(str string) error {
+	readable, deserialized, err := bech32cosmos.Decode(str)
+	if err != nil {
+		return err
+	}
+	if strings.ToUpper(readable) != "CSMSADDR" {
+		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
+	}
+
+	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, true)
+
+	err = cdc.UnmarshalBinary(deserialized, a)
+
+	if err != nil {
+		return err
+	}
+
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func PubKeyFromBytes(pubKeyBytes []byte) (pubKey PubKey, err error) {
@@ -123,7 +153,9 @@ func (pubKey PubKeyEd25519) String() string {
 	if err != nil {
 		return err.Error()
 	}
-	bech, err := bech32cosmos.Encode("CSMSPUB", marshaled)
+	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
+
+	bech, err := bech32cosmos.Encode("CSMSPUB", conv)
 	if err != nil {
 		return err.Error()
 	}
@@ -189,7 +221,9 @@ func (pubKey PubKeySecp256k1) String() string {
 	if err != nil {
 		return err.Error()
 	}
-	bech, err := bech32cosmos.Encode("CSMSPUB", marshaled)
+	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
+
+	bech, err := bech32cosmos.Encode("CSMSPUB", conv)
 	if err != nil {
 		return err.Error()
 	}

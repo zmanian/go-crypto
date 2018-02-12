@@ -10,7 +10,7 @@ imports:
   subpackages:
   - base58
 - name: github.com/cosmos/bech32cosmos
-  version: e9ace91a8b2c9cfea3988a3cc8dd19ce60e7103e
+  version: bfcba472e4278e3ab64a61a1dbba76ccbdc81ceb
   subpackages:
   - go
 - name: github.com/davecgh/go-spew

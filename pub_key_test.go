@@ -10,16 +10,18 @@ import (
 )
 
 type keyData struct {
-	priv string
-	pub  string
-	addr string
+	priv       string
+	pub        string
+	addr       string
+	bech32addr string
 }
 
 var secpDataTable = []keyData{
 	{
-		priv: "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
-		pub:  "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
-		addr: "1CKZ9Nx4zgds8tU7nJHotKSDr4a9bYJCa3",
+		priv:       "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
+		pub:        "02950e1cdfcb133d6024109fd489f734eeb4502418e538c28481f22bce276f248c",
+		addr:       "1CKZ9Nx4zgds8tU7nJHotKSDr4a9bYJCa3",
+		bech32addr: "csmsaddr:cklnrf3g0s4mg25tu6termrk8egltfyme4q7sg3h9myxnv",
 	},
 }
 
@@ -29,14 +31,19 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		pubB, _ := hex.DecodeString(d.pub)
 		addrBbz, _, _ := base58.CheckDecode(d.addr)
 		addrB := Address{addrBbz}
-
+		addrDecoded := Address{}
+		err := addrDecoded.FromString(d.bech32addr)
+		if err != nil {
+			t.Fatal(err)
+		}
 		var priv PrivKeySecp256k1
 		copy(priv[:], privB)
 
 		pubT := priv.PubKey().(PubKeySecp256k1)
 		pub := pubT[:]
 		addr := priv.PubKey().Address()
-
+		assert.Equal(t, addr.String(), d.bech32addr)
+		assert.Equal(t, addr, addrDecoded)
 		assert.Equal(t, pub, pubB, "Expected pub keys to match")
 		assert.Equal(t, addr, addrB, "Expected addresses to match")
 	}
