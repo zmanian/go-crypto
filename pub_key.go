@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"strings"
+
+	"github.com/cosmos/bech32cosmos/go"
 
 	secp256k1 "github.com/btcsuite/btcd/btcec"
 	"github.com/tendermint/ed25519"
@@ -15,7 +18,37 @@ import (
 // An address is a []byte, but hex-encoded even in JSON.
 // []byte leaves us the option to change the address length.
 // Use an alias so Unmarshal methods (with ptr receivers) are available too.
-type Address = cmn.HexBytes
+type Address struct {
+	cmn.HexBytes
+}
+
+func (a *Address) UnmarshalJSON(data []byte) error {
+	readable, deserialized, err := bech32cosmos.Decode(string(data))
+	if err != nil {
+		return err
+	}
+	if strings.ToUpper(readable) != "COSADDR" {
+		return fmt.Errorf("%s is not COSADDR the Cosmos Address identifier", readable)
+	}
+	*a = Address{deserialized}
+	return nil
+}
+
+func (a *Address) MarshalJSON() ([]byte, error) {
+	bech, err := bech32cosmos.Encode("COSADDR", a.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return []byte(bech), nil
+}
+
+func (a *Address) String() string {
+	bech, err := bech32cosmos.Encode("COSADDR", a.Bytes())
+	if err != nil {
+		return err.Error()
+	}
+	return bech
+}
 
 func PubKeyFromBytes(pubKeyBytes []byte) (pubKey PubKey, err error) {
 	err = cdc.UnmarshalBinary(pubKeyBytes, &pubKey)
@@ -42,7 +75,7 @@ func (pubKey PubKeyEd25519) Address() Address {
 	// append type byte
 	hasher := ripemd160.New()
 	hasher.Write(pubKey.Bytes()) // does not error
-	return Address(hasher.Sum(nil))
+	return Address{hasher.Sum(nil)}
 }
 
 func (pubKey PubKeyEd25519) Bytes() []byte {
@@ -76,7 +109,11 @@ func (pubKey PubKeyEd25519) ToCurve25519() *[32]byte {
 }
 
 func (pubKey PubKeyEd25519) String() string {
-	return fmt.Sprintf("PubKeyEd25519{%X}", pubKey[:])
+	bech, err := bech32cosmos.Encode("COSPUBKEY", pubKey[:])
+	if err != nil {
+		return err.Error()
+	}
+	return bech
 }
 
 func (pubKey PubKeyEd25519) Equals(other PubKey) bool {
@@ -104,7 +141,7 @@ func (pubKey PubKeySecp256k1) Address() Address {
 
 	hasherRIPEMD160 := ripemd160.New()
 	hasherRIPEMD160.Write(sha) // does not error
-	return Address(hasherRIPEMD160.Sum(nil))
+	return Address{hasherRIPEMD160.Sum(nil)}
 }
 
 func (pubKey PubKeySecp256k1) Bytes() []byte {
