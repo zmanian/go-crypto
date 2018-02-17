@@ -56,6 +56,46 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 	}
 }
 
+var ed25519DataTable = []keyData{
+	{
+		priv:       "a96e62ed3955e65be32703f12d87b6b5cf26039ecfa948dc5107a495418e5330",
+		pub:        "328eaf59a52d39cf0fcb8e9fd431788c7731731400500b7f3c011463f8d55d3ffd8aeba1",
+		bech32addr: "csmsaddr:cklnrf3gqh9lwgjh7e56u5k9tl6l7jqz5h42c3smqsdl70",
+		bech32pub:  "csmspub:x2827kd995uu7r7t360agvtc33mnzuc5qpgqkleuqy2x87x4t5llmzht5yn5j4az",
+	},
+}
+
+func TestPubKeyEd25519Address(t *testing.T) {
+	for _, d := range ed25519DataTable {
+		privB, _ := hex.DecodeString(d.priv)
+		pubB, _ := hex.DecodeString(d.pub)
+		addrDecoded := Address{}
+		err := addrDecoded.FromString(d.bech32addr)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var priv PrivKeyEd25519
+		copy(priv[:], privB)
+
+		pubT := priv.PubKey().(PubKeyEd25519)
+		pubT.humanReadable = "csmspub"
+		pubDeserialized := priv.PubKey().(PubKeyEd25519)
+		err = pubDeserialized.FromString(d.bech32pub)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		pub := pubT.Bytes()
+
+		addr := priv.PubKey().Address()
+		assert.Equal(t, pubT.String(), d.bech32pub)
+		assert.Equal(t, pubT, pubDeserialized)
+		assert.Equal(t, addr.String(), d.bech32addr)
+		assert.Equal(t, addr, addrDecoded)
+		assert.Equal(t, pub, pubB, "Expected pub keys to match")
+	}
+}
+
 func TestPubKeyInvalidDataProperReturnsEmpty(t *testing.T) {
 	pk, err := PubKeyFromBytes([]byte("foo"))
 	require.NotNil(t, err, "expecting a non-nil error")
