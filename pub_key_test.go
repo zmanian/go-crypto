@@ -51,7 +51,7 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		assert.Equal(t, pubT.String(), d.bech32pub)
 		assert.Equal(t, pubT, pubDeserialized)
 		assert.Equal(t, addr.String(), d.bech32addr)
-		assert.Equal(t, addr, addrDecoded)
+		assert.Equal(t, addr.HexBytes, addrDecoded.HexBytes)
 		assert.Equal(t, pub, pubB, "Expected pub keys to match")
 	}
 }
@@ -91,7 +91,7 @@ func TestPubKeyEd25519Address(t *testing.T) {
 		assert.Equal(t, pubT.String(), d.bech32pub)
 		assert.Equal(t, pubT, pubDeserialized)
 		assert.Equal(t, addr.String(), d.bech32addr)
-		assert.Equal(t, addr, addrDecoded)
+		assert.Equal(t, addr.HexBytes, addrDecoded.HexBytes)
 		assert.Equal(t, pub, pubB, "Expected pub keys to match")
 	}
 }

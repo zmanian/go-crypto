@@ -3,7 +3,6 @@ package crypto
 import (
 	"bytes"
 	"crypto/sha256"
-	"fmt"
 	"strings"
 
 	"github.com/cosmos/bech32cosmos/go"
@@ -80,9 +79,8 @@ func (a *Address) FromString(str string) error {
 	if err != nil {
 		return err
 	}
-	if strings.ToUpper(readable) != "CSMSADDR" {
-		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
-	}
+
+	a.humanReadable = readable
 
 	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, false)
 
