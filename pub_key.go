@@ -44,11 +44,11 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	readable := "CSMSADDR"
+	readable := "csvsaddr"
 	if a.humanReadable != "" {
 		readable = a.humanReadable
 	}
-	bech, err := bech32cosmos.Encode(readable, conv)
+	bech, err := bech32cosmos.Encode(strings.ToLower(readable), conv)
 
 	if err != nil {
 		return nil, err
@@ -63,7 +63,12 @@ func (a *Address) String() string {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	bech, err := bech32cosmos.Encode("CSMSADDR", conv)
+	readable := "csmsaddr"
+	if a.humanReadable != "" {
+		readable = a.humanReadable
+	}
+	bech, err := bech32cosmos.Encode(strings.ToLower(readable), conv)
+
 	if err != nil {
 		return "bech32cosmos err:" + err.Error()
 	}
@@ -113,7 +118,7 @@ var _ PubKey = PubKeyEd25519{}
 
 // Implements PubKeyInner
 type PubKeyEd25519 struct {
-	data          [32]byte
+	Data          [32]byte
 	humanReadable string
 }
 
@@ -138,7 +143,7 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ Signature) bool {
 	if !ok {
 		return false
 	}
-	pubKeyBytes := [32]byte(pubKey.data)
+	pubKeyBytes := [32]byte(pubKey.Data)
 	sigBytes := [64]byte(sig)
 	return ed25519.Verify(&pubKeyBytes, msg, &sigBytes)
 }
@@ -146,7 +151,7 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ Signature) bool {
 // For use with golang/crypto/nacl/box
 // If error, returns nil.
 func (pubKey PubKeyEd25519) ToCurve25519() *[32]byte {
-	keyCurve25519, pubKeyBytes := new([32]byte), [32]byte(pubKey.data)
+	keyCurve25519, pubKeyBytes := new([32]byte), [32]byte(pubKey.Data)
 	ok := extra25519.PublicKeyToCurve25519(keyCurve25519, &pubKeyBytes)
 	if !ok {
 		return nil
@@ -161,12 +166,12 @@ func (pubKey PubKeyEd25519) String() string {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	readable := "CSMSPUB"
+	readable := "csmspub"
 	if pubKey.humanReadable != "" {
 		readable = pubKey.humanReadable
 	}
 
-	bech, err := bech32cosmos.Encode(readable, conv)
+	bech, err := bech32cosmos.Encode(strings.ToLower(readable), conv)
 	if err != nil {
 		return err.Error()
 	}
@@ -195,7 +200,7 @@ func (pubKey *PubKeyEd25519) FromString(str string) error {
 
 func (pubKey PubKeyEd25519) Equals(other PubKey) bool {
 	if otherEd, ok := other.(PubKeyEd25519); ok {
-		return bytes.Equal(pubKey.data[:], otherEd.data[:])
+		return bytes.Equal(pubKey.Data[:], otherEd.Data[:])
 	} else {
 		return false
 	}
@@ -209,7 +214,7 @@ var _ PubKey = PubKeySecp256k1{}
 // Compressed pubkey (just the x-cord),
 // prefixed with 0x02 or 0x03, depending on the y-cord.
 type PubKeySecp256k1 struct {
-	data          [33]byte
+	Data          [33]byte
 	humanReadable string
 }
 
@@ -239,7 +244,7 @@ func (pubKey PubKeySecp256k1) VerifyBytes(msg []byte, sig_ Signature) bool {
 		return false
 	}
 
-	pub__, err := secp256k1.ParsePubKey(pubKey.Bytes(), secp256k1.S256())
+	pub__, err := secp256k1.ParsePubKey(pubKey.Data[:], secp256k1.S256())
 	if err != nil {
 		return false
 	}
@@ -257,12 +262,12 @@ func (pubKey PubKeySecp256k1) String() string {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	readable := "CSMSPUB"
+	readable := "csmspub"
 	if pubKey.humanReadable != "" {
 		readable = pubKey.humanReadable
 	}
 
-	bech, err := bech32cosmos.Encode(readable, conv)
+	bech, err := bech32cosmos.Encode(strings.ToLower(readable), conv)
 	if err != nil {
 		return err.Error()
 	}
@@ -283,7 +288,6 @@ func (pubKey *PubKeySecp256k1) FromString(str string) error {
 	}
 
 	err = cdc.UnmarshalBinary(converted, pubKey)
-
 	if err != nil {
 		return err
 	}

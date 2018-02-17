@@ -131,8 +131,8 @@ func (privKey PrivKeySecp256k1) Sign(msg []byte) Signature {
 
 func (privKey PrivKeySecp256k1) PubKey() PubKey {
 	_, pub__ := secp256k1.PrivKeyFromBytes(secp256k1.S256(), privKey[:])
-	var pub PubKeySecp256k1
-	copy(pub.data[:], pub__.SerializeCompressed())
+	pub := PubKeySecp256k1{}
+	copy(pub.Data[:], pub__.SerializeCompressed())
 	return pub
 }
 
