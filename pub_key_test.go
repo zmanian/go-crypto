@@ -32,7 +32,7 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 		privB, _ := hex.DecodeString(d.priv)
 		pubB, _ := hex.DecodeString(d.pub)
 		addrBbz, _, _ := base58.CheckDecode(d.addr)
-		addrB := Address{addrBbz}
+		addrB := Address{addrBbz, ""}
 		addrDecoded := Address{}
 		err := addrDecoded.FromString(d.bech32addr)
 		if err != nil {

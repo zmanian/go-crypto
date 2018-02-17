@@ -20,6 +20,7 @@ import (
 // Use an alias so Unmarshal methods (with ptr receivers) are available too.
 type Address struct {
 	cmn.HexBytes
+	humanReadable string
 }
 
 func (a *Address) UnmarshalJSON(data []byte) error {
@@ -27,9 +28,7 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	if strings.ToUpper(readable) != "CSMSADDR" {
-		return fmt.Errorf("%s is not CSMSADDR the Cosmos Address identifier", readable)
-	}
+	a.humanReadable = readable
 
 	err = cdc.UnmarshalBinary(deserialized, a)
 	if err != nil {
@@ -46,7 +45,12 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	bech, err := bech32cosmos.Encode("CSMSADDR", conv)
+	readable := "CSMSADDR"
+	if a.humanReadable != "" {
+		readable = a.humanReadable
+	}
+	bech, err := bech32cosmos.Encode(readable, conv)
+
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func (pubKey PubKeyEd25519) Address() Address {
 	// append type byte
 	hasher := ripemd160.New()
 	hasher.Write(pubKey.Bytes()) // does not error
-	return Address{hasher.Sum(nil)}
+	return Address{hasher.Sum(nil), ""}
 }
 
 func (pubKey PubKeyEd25519) Bytes() []byte {
@@ -210,7 +214,7 @@ func (pubKey PubKeySecp256k1) Address() Address {
 
 	hasherRIPEMD160 := ripemd160.New()
 	hasherRIPEMD160.Write(sha) // does not error
-	return Address{hasherRIPEMD160.Sum(nil)}
+	return Address{hasherRIPEMD160.Sum(nil), ""}
 }
 
 func (pubKey PubKeySecp256k1) Bytes() []byte {
