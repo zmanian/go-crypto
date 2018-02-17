@@ -59,7 +59,7 @@ func (a *Address) MarshalJSON() ([]byte, error) {
 func (a *Address) String() string {
 	marshaled, err := cdc.MarshalBinary(a)
 	if err != nil {
-		return "go-wire err:" + err.Error()
+		panic("go-wire err:" + err.Error())
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
@@ -70,7 +70,7 @@ func (a *Address) String() string {
 	bech, err := bech32cosmos.Encode(strings.ToLower(readable), conv)
 
 	if err != nil {
-		return "bech32cosmos err:" + err.Error()
+		panic("bech32cosmos err:" + err.Error())
 	}
 	return bech
 }
@@ -162,7 +162,7 @@ func (pubKey PubKeyEd25519) ToCurve25519() *[32]byte {
 func (pubKey PubKeyEd25519) String() string {
 	marshaled, err := cdc.MarshalBinary(pubKey)
 	if err != nil {
-		return err.Error()
+		panic(err.Error())
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
@@ -258,7 +258,7 @@ func (pubKey PubKeySecp256k1) VerifyBytes(msg []byte, sig_ Signature) bool {
 func (pubKey PubKeySecp256k1) String() string {
 	marshaled, err := cdc.MarshalBinary(pubKey)
 	if err != nil {
-		return err.Error()
+		panic(err.Error())
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
