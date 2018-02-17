@@ -108,6 +108,7 @@ type PubKey interface {
 	Bytes() []byte
 	VerifyBytes(msg []byte, sig Signature) bool
 	Equals(PubKey) bool
+	VerifyReadable(readable string) bool
 }
 
 //-------------------------------------
@@ -204,6 +205,10 @@ func (pubKey PubKeyEd25519) Equals(other PubKey) bool {
 	}
 }
 
+func (pubkey PubKeyEd25519) VerifyReadable(readable string) bool {
+	return pubkey.humanReadable == readable
+}
+
 //-------------------------------------
 
 var _ PubKey = PubKeySecp256k1{}
@@ -297,4 +302,8 @@ func (pubKey PubKeySecp256k1) Equals(other PubKey) bool {
 	} else {
 		return false
 	}
+}
+
+func (pubkey PubKeySecp256k1) VerifyReadable(readable string) bool {
+	return pubkey.humanReadable == readable
 }
