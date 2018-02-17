@@ -38,7 +38,6 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 }
 
 func (a *Address) MarshalJSON() ([]byte, error) {
-
 	marshaled, err := cdc.MarshalBinary(a)
 	if err != nil {
 		return nil, err
@@ -113,7 +112,10 @@ type PubKey interface {
 var _ PubKey = PubKeyEd25519{}
 
 // Implements PubKeyInner
-type PubKeyEd25519 [32]byte
+type PubKeyEd25519 struct {
+	data          [32]byte
+	humanReadable string
+}
 
 func (pubKey PubKeyEd25519) Address() Address {
 	// append type byte
@@ -136,7 +138,7 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ Signature) bool {
 	if !ok {
 		return false
 	}
-	pubKeyBytes := [32]byte(pubKey)
+	pubKeyBytes := [32]byte(pubKey.data)
 	sigBytes := [64]byte(sig)
 	return ed25519.Verify(&pubKeyBytes, msg, &sigBytes)
 }
@@ -144,7 +146,7 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ Signature) bool {
 // For use with golang/crypto/nacl/box
 // If error, returns nil.
 func (pubKey PubKeyEd25519) ToCurve25519() *[32]byte {
-	keyCurve25519, pubKeyBytes := new([32]byte), [32]byte(pubKey)
+	keyCurve25519, pubKeyBytes := new([32]byte), [32]byte(pubKey.data)
 	ok := extra25519.PublicKeyToCurve25519(keyCurve25519, &pubKeyBytes)
 	if !ok {
 		return nil
@@ -159,7 +161,12 @@ func (pubKey PubKeyEd25519) String() string {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	bech, err := bech32cosmos.Encode("CSMSPUB", conv)
+	readable := "CSMSPUB"
+	if pubKey.humanReadable != "" {
+		readable = pubKey.humanReadable
+	}
+
+	bech, err := bech32cosmos.Encode(readable, conv)
 	if err != nil {
 		return err.Error()
 	}
@@ -171,10 +178,7 @@ func (pubKey *PubKeyEd25519) FromString(str string) error {
 	if err != nil {
 		return err
 	}
-	if strings.ToLower(readable) != "csmspub" {
-		return fmt.Errorf("%s is not csmspub the Cosmos Public Key identifier", readable)
-	}
-
+	pubKey.humanReadable = readable
 	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, false)
 
 	err = cdc.UnmarshalBinary(deserialized, pubKey)
@@ -191,7 +195,7 @@ func (pubKey *PubKeyEd25519) FromString(str string) error {
 
 func (pubKey PubKeyEd25519) Equals(other PubKey) bool {
 	if otherEd, ok := other.(PubKeyEd25519); ok {
-		return bytes.Equal(pubKey[:], otherEd[:])
+		return bytes.Equal(pubKey.data[:], otherEd.data[:])
 	} else {
 		return false
 	}
@@ -204,12 +208,15 @@ var _ PubKey = PubKeySecp256k1{}
 // Implements PubKey.
 // Compressed pubkey (just the x-cord),
 // prefixed with 0x02 or 0x03, depending on the y-cord.
-type PubKeySecp256k1 [33]byte
+type PubKeySecp256k1 struct {
+	data          [33]byte
+	humanReadable string
+}
 
 // Implements Bitcoin style addresses: RIPEMD160(SHA256(pubkey))
 func (pubKey PubKeySecp256k1) Address() Address {
 	hasherSHA256 := sha256.New()
-	hasherSHA256.Write(pubKey[:]) // does not error
+	hasherSHA256.Write(pubKey.Bytes()) // does not error
 	sha := hasherSHA256.Sum(nil)
 
 	hasherRIPEMD160 := ripemd160.New()
@@ -232,7 +239,7 @@ func (pubKey PubKeySecp256k1) VerifyBytes(msg []byte, sig_ Signature) bool {
 		return false
 	}
 
-	pub__, err := secp256k1.ParsePubKey(pubKey[:], secp256k1.S256())
+	pub__, err := secp256k1.ParsePubKey(pubKey.Bytes(), secp256k1.S256())
 	if err != nil {
 		return false
 	}
@@ -250,7 +257,12 @@ func (pubKey PubKeySecp256k1) String() string {
 	}
 	conv, err := bech32cosmos.ConvertBits(marshaled, 8, 5, true)
 
-	bech, err := bech32cosmos.Encode("CSMSPUB", conv)
+	readable := "CSMSPUB"
+	if pubKey.humanReadable != "" {
+		readable = pubKey.humanReadable
+	}
+
+	bech, err := bech32cosmos.Encode(readable, conv)
 	if err != nil {
 		return err.Error()
 	}
@@ -262,17 +274,11 @@ func (pubKey *PubKeySecp256k1) FromString(str string) error {
 	if err != nil {
 		return err
 	}
-	if strings.ToLower(readable) != "csmspub" {
-		return fmt.Errorf("%s is not csmspub the Cosmos Public Key identifier", readable)
-	}
 
+	pubKey.humanReadable = readable
 	converted, err := bech32cosmos.ConvertBits(deserialized, 5, 8, false)
 
 	err = cdc.UnmarshalBinary(converted, pubKey)
-
-	if err != nil {
-		return err
-	}
 
 	if err != nil {
 		return err
@@ -281,7 +287,7 @@ func (pubKey *PubKeySecp256k1) FromString(str string) error {
 }
 func (pubKey PubKeySecp256k1) Equals(other PubKey) bool {
 	if otherSecp, ok := other.(PubKeySecp256k1); ok {
-		return bytes.Equal(pubKey[:], otherSecp[:])
+		return bytes.Equal(pubKey.Bytes(), otherSecp.Bytes())
 	} else {
 		return false
 	}

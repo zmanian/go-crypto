@@ -47,7 +47,7 @@ func (privKey PrivKeyEd25519) Sign(msg []byte) Signature {
 func (privKey PrivKeyEd25519) PubKey() PubKey {
 	privKeyBytes := [64]byte(privKey)
 	pubBytes := *ed25519.MakePublicKey(&privKeyBytes)
-	return PubKeyEd25519(pubBytes)
+	return PubKeyEd25519{pubBytes, ""}
 }
 
 // Equals - you probably don't need to use this.
@@ -132,7 +132,7 @@ func (privKey PrivKeySecp256k1) Sign(msg []byte) Signature {
 func (privKey PrivKeySecp256k1) PubKey() PubKey {
 	_, pub__ := secp256k1.PrivKeyFromBytes(secp256k1.S256(), privKey[:])
 	var pub PubKeySecp256k1
-	copy(pub[:], pub__.SerializeCompressed())
+	copy(pub.data[:], pub__.SerializeCompressed())
 	return pub
 }
 

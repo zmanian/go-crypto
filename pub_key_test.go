@@ -48,7 +48,7 @@ func TestPubKeySecp256k1Address(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		pub := pubT[:]
+		pub := pubT.Bytes()
 
 		addr := priv.PubKey().Address()
 		assert.Equal(t, pubT.String(), d.bech32pub)
