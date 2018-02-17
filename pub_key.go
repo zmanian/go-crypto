@@ -181,11 +181,11 @@ func (pubKey *PubKeyEd25519) FromString(str string) error {
 	pubKey.humanReadable = readable
 	deserialized, err = bech32cosmos.ConvertBits(deserialized, 5, 8, false)
 
-	err = cdc.UnmarshalBinary(deserialized, pubKey)
-
 	if err != nil {
 		return err
 	}
+
+	err = cdc.UnmarshalBinary(deserialized, pubKey)
 
 	if err != nil {
 		return err
@@ -277,6 +277,10 @@ func (pubKey *PubKeySecp256k1) FromString(str string) error {
 
 	pubKey.humanReadable = readable
 	converted, err := bech32cosmos.ConvertBits(deserialized, 5, 8, false)
+
+	if err != nil {
+		return err
+	}
 
 	err = cdc.UnmarshalBinary(converted, pubKey)
 
