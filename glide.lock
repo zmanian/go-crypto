@@ -1,5 +1,5 @@
 hash: 3d9c9b0bc44ebdc7448e4fad6476df19f0bc0fa17b4e78344901bafbe34d8480
-updated: 2018-02-20T19:43:29.661264458+01:00
+updated: 2018-02-20T19:47:26.54587177+01:00
 imports:
 - name: github.com/btcsuite/btcd
   version: 2e60448ffcc6bf78332d1fe590260095f554dd78
